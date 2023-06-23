@@ -1,8 +1,5 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>BlogApp</title>
-</head>
 <body>
   <h1>BlogApp</h1>
 
@@ -80,9 +77,6 @@
   <h2>License</h2>
   <p>This project is licensed under the <a href="LICENSE">MIT License</a>.</p>
 
-  <h2>Acknowledgements</h2>
-  <p><a href="https://www.openai.com/">OpenAI</a> for providing the GPT-4 language model used to generate this README template.</p>
-
-  <p>Feel free to customize this README file based on your specific project details and requirements. Good luck with your Blog App project!</p>
+  
 </body>
 </html>
