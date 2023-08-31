@@ -4,6 +4,7 @@ const app = require("../app");
 const api = supertest(app);
 const helper = require("./helper");
 let token = "";
+const jwt = require("jsonwebtoken");
 
 //Before all empty the database for users and blogs.
 //Generate and save a token
@@ -102,24 +103,103 @@ describe("Testing blog CRUD functionality", () => {
 
     const updatedBlog = { ...blogs[0], content: "This blog has been updated" };
 
-
     await api
       .put(`/api/blogs/${blogs[0].id.toString()}`)
       .set("Authorization", `Bearer ${token}`)
       .send(updatedBlog)
       .expect(200);
-
   });
 
   test("Correct user can delete the blog", async () => {
     const blogs = await helper.blogsInDB();
-    await api.delete(`/api/blogs/${blogs[0].id.toString()}`)
-    .set("Authorization", `Bearer ${token}`)
-    .expect(204)
-
-
-  })
+    await api
+      .delete(`/api/blogs/${blogs[0].id.toString()}`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(204);
+    const newblog = await helper.blogsInDB();
+  });
 });
+
+describe("Testing commenting functionality", () => {
+  let blogId;
+
+  beforeAll(async () => {
+    const blogs = await helper.blogsInDB();
+    blogId = blogs[0].id;
+  });
+
+  test("A comment can be added to a blog", async () => {
+    const comment = {
+      content: "This is a test comment for the blog post.",
+    };
+
+    await api
+      .post(`/api/blogs/${blogId}/comments`)
+      .send(comment)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(201);
+  });
+
+  test("A blog with comments can be retrieved", async () => {
+    const result = await api.get(`/api/blogs/${blogId}`);
+    expect(result.body.comments).toHaveLength(1);
+  });
+});
+
+describe("Testing liking/unliking functionality", () => {
+  let blogId;
+  let userId;
+  let response; 
+
+  beforeAll(async () => {
+    const blogs = await helper.blogsInDB();
+    blogId = blogs[0].id;
+
+    // Log in the user and obtain a token
+    const user = { username: "testuser", password: "testuser" };
+    const result = await api.post("/api/login").send(user);
+    token = result.body.token;
+
+    // Decode the token to get the user ID
+    const decodedToken = jwt.verify(token, process.env.SECRET);
+    userId = decodedToken.id;
+
+    // Like the blog before testing
+    response = await api
+      .put(`/api/blogs/${blogId}/like`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+  });
+
+  test("A blog can be liked", async () => {
+    expect(
+      response.body.likes.some((like) => like.user === userId)
+    ).toBeTruthy();
+
+    const updatedBlog = await api.get(`/api/blogs/${blogId}`);
+    expect(
+      updatedBlog.body.likes.some((like) => like.user === userId)
+    ).toBeTruthy();
+  });
+
+  test("A blog can be unliked", async () => {
+    response = await api
+      .put(`/api/blogs/${blogId}/like`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    expect(
+      response.body.likes.some((like) => like.user === userId)
+    ).toBeFalsy();
+
+    const updatedBlog = await api.get(`/api/blogs/${blogId}`);
+    expect(
+      updatedBlog.body.likes.some((like) => like.user === userId)
+    ).toBeFalsy();
+  });
+});
+
+// Rest of the code...
 
 afterAll(async () => {
   await mongoose.connection.close();
