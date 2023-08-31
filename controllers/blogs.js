@@ -18,10 +18,17 @@ blogsRouter.post("/", async (request, response) => {
   if (!user) {
     return response.status(401).json({ error: "invalid token" });
   }
-  const { author, content, likes, url, title } = request.body;
-
-  const blog = new Blog({ author, content, likes, url, title, user: user.id });
-  user.blogs = user.blogs.concat(blog.id);
+  const { content, title } = request.body;
+  const author = user.name;
+  const metaDescription = content.slice(0, 149) + "...";
+  const blog = new Blog({
+    author,
+    content,
+    metaDescription,
+    title,
+    user: user.id,
+  });
+  user.blog = user.blog.concat(blog.id);
   await user.save();
   const result = await blog.save();
 
@@ -50,7 +57,7 @@ blogsRouter.delete("/:id", async (request, response) => {
 
   await Blog.findByIdAndRemove(request.params.id);
 
-  user.blogs = user.blogs.filter(
+  user.blog = user.blog.filter(
     (blog) => blog.id.toString() !== request.params.id
   );
   await user.save();

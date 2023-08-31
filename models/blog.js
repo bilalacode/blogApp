@@ -10,17 +10,19 @@ const blogSchema = mongoose.Schema({
     type: String,
     required: true,
   },
-  url: {
+  metaDescription: {
     type: String,
-    required: true,
-  },
+    required: true
+  }
+  ,
   likes: {
     type: Number,
-    required: true,
+    default: 0
   },
   content: {
     type: String,
     required: true,
+    minLength: 500
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
